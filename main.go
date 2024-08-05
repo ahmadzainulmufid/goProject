@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"goProject/handler"
 	"goProject/user"
 	"log"
@@ -25,11 +26,22 @@ func main() {
 
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
+	input := user.LoginInput{
+		Email:    "email@domain.com",
+		Password: "password",
+	}
+	user, err := userService.Login(input)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Println(user.Name)
+	fmt.Println(user.Email)
 
 	userHandler := handler.NewUserHandler(userService)
 	router := gin.Default()
 	api := router.Group("/api/v1")
 
+	api.POST("/users/login", userHandler.Login)
 	api.POST("/users", userHandler.RegisterUser)
 	router.Run()
 	// userInput := user.RegisterUserInput{
