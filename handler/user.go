@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"goProject/helper"
 	"goProject/user"
 	"net/http"
 
@@ -20,15 +21,25 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errors := helper.FormatValidationError(err)
+
+		errorMessage := gin.H{"errors": errors}
+
+		response := helper.APIResponse("Register user Failed", http.StatusUnprocessableEntity, "Error", errorMessage)
+		c.JSON(http.StatusUnprocessableEntity, response)
 		return
 	}
 
-	user, err := h.userService.RegisterUser(input)
+	newUser, err := h.userService.RegisterUser(input)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response := helper.APIResponse("Register user Failed", http.StatusBadRequest, "Error", nil)
+		c.JSON(http.StatusBadRequest, response)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": user})
+	formatter := user.FormatUser(newUser, "tokentokentokentokentoken")
+
+	response := helper.APIResponse("Register user success", http.StatusOK, "success", formatter)
+
+	c.JSON(http.StatusOK, response)
 }
