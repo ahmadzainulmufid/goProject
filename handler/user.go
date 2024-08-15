@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"goProject/auth"
 	"goProject/helper"
 	"goProject/user"
 	"net/http"
@@ -12,10 +13,11 @@ import (
 
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
 
-func NewUserHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+func NewUserHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 
 func (h *userHandler) RegisterUser(c *gin.Context) {
@@ -39,7 +41,14 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	formatter := user.FormatUser(newUser, "tokentokentokentokentoken")
+	token, err := h.authService.GenerateToken(int(newUser.ID))
+	if err != nil {
+		response := helper.APIResponse("Register user Failed", http.StatusBadRequest, "Error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	formatter := user.FormatUser(newUser, token)
 
 	response := helper.APIResponse("Register user success", http.StatusOK, "success", formatter)
 
@@ -64,7 +73,13 @@ func (h *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	formatter := user.FormatUser(loggedinUser, "tokentokentokentokentoken")
+	token, err := h.authService.GenerateToken(int(loggedinUser.ID))
+	if err != nil {
+		response := helper.APIResponse("Login failed", http.StatusBadRequest, "Error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	formatter := user.FormatUser(loggedinUser, token)
 
 	response := helper.APIResponse("Login success", http.StatusOK, "success", formatter)
 	c.JSON(http.StatusOK, response)
@@ -113,7 +128,8 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	// Assume userID is obtained from the context or session
-	userID := 1
+	currentUser := c.MustGet("currentUser").(user.User)
+	userID := currentUser.ID
 	// path := "images/" + file.Filename
 	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
 	err = c.SaveUploadedFile(file, path)
@@ -124,7 +140,7 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	_, err = h.userService.SaveAvatar(userID, path)
+	_, err = h.userService.SaveAvatar(int(userID), path)
 	if err != nil {
 		data := gin.H{"is_uploaded": false}
 		response := helper.APIResponse("Failed to upload avatar image", http.StatusBadRequest, "Error", data)
