@@ -51,11 +51,15 @@ func main() {
 	router.Static("/images", "./images")
 	api := router.Group("/api/v1")
 
-	api.POST("/users/login", userHandler.Login)
-	api.POST("/users/check-email", userHandler.CheckEmailAvailability)
-	api.POST("/users", userHandler.RegisterUser)
-	api.POST("/users/avatar", authMiddleware(authService, userService), userHandler.UploadAvatar)
-	api.GET("/users/campaigns", campaignHandler.GetCampaigns)
+	api.POST("/login", userHandler.Login)
+	api.POST("/check-email", userHandler.CheckEmailAvailability)
+	api.POST("/register", userHandler.RegisterUser)
+	api.POST("/avatar", authMiddleware(authService, userService), userHandler.UploadAvatar)
+	api.GET("/campaigns", campaignHandler.GetCampaigns)
+	api.GET("/campaigns/:id", campaignHandler.GetCampaign)
+	api.POST("campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
+	api.PUT("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.UpdateCampaign)
+	api.DELETE("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.DeleteCampaign)
 
 	router.Run()
 }
