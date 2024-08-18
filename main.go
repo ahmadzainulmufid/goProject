@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"goProject/auth"
 	"goProject/campaign"
 	"goProject/handler"
 	"goProject/helper"
+	"goProject/transaction"
+
 	"goProject/user"
 	"log"
 	"net/http"
@@ -26,26 +27,16 @@ func main() {
 
 	userRepository := user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
+	transactionRepository := transaction.NewRepository(db)
 
 	userService := user.NewService(userRepository)
 	campaignService := campaign.NewService(campaignRepository)
 	authService := auth.NewService()
-
-	token, err := authService.ValidateToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo4fQ.FjyMOwf47Iyx1jn0BEOZkToOcYUy9g44S9EyB9pqrDU")
-	if err != nil {
-		fmt.Println("error woy")
-	}
-
-	if token.Valid {
-		fmt.Println("token success")
-	} else {
-		fmt.Println("token failed")
-	}
+	transactionService := transaction.NewService(transactionRepository, campaignRepository)
 
 	userHandler := handler.NewUserHandler(userService, authService)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
-
-	fmt.Println(authService.GenerateToken(1))
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	router := gin.Default()
 	router.Static("/images", "./images")
@@ -60,6 +51,9 @@ func main() {
 	api.POST("campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
 	api.PUT("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.UpdateCampaign)
 	api.DELETE("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.DeleteCampaign)
+	api.POST("/campaign-images", authMiddleware(authService, userService), campaignHandler.UploadImage)
+	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.GetCampaignTransaction)
+	api.GET("/transactions", authMiddleware(authService, userService), transactionHandler.GetUserTransactions)
 
 	router.Run()
 }
