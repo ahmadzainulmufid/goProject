@@ -13,8 +13,9 @@ type Transaction struct {
 	Amount     int
 	Status     string
 	Code       string
+	PaymentURL string
 	User       user.User
 	Campaign   campaign.Campaign
 	CreatedAt  time.Time
-	UpdateAt   time.Time
+	UpdatedAt  time.Time // Ganti dari UpdateAt menjadi UpdatedAt
 }

@@ -70,8 +70,8 @@ func (h *campaignHandler) CreateCampaign(c *gin.Context) {
 
 	newCampaign, err := h.campaignService.CreateCampaign(input)
 	if err != nil {
-		response := helper.APIResponse("Failed to create campaign", http.StatusUnprocessableEntity, "Error", nil)
-		c.JSON(http.StatusUnprocessableEntity, response)
+		response := helper.APIResponse("Failed to create campaign", http.StatusBadRequest, "Error", nil)
+		c.JSON(http.StatusBadRequest, response)
 		return
 	}
 
